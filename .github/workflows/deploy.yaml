@@ -32,8 +32,6 @@ jobs:
               run: echo "ELM_HOME=${GITHUB_WORKSPACE}/.elm" >> $GITHUB_ENV
 
             # build LiaScript
-            - name: LiaScript - download
-              run: git clone --branch development https://github.com/LiaScript/LiaScript.git
             - name: LiaScript - prebuild
               run: |
                   cd LiaScript
