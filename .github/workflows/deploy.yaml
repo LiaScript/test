@@ -1,0 +1,57 @@
+name: Deploy LiaScript Test Website
+
+on:
+    repository_dispatch:
+        types: [trigger-build]
+
+permissions:
+    contents: write
+    pages: write
+    id-token: write
+
+defaults:
+    run:
+        shell: bash
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download LiaScript test branch
+              run: git clone --branch test https://github.com/LiaScript/LiaScript.git
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "20"
+
+            - name: Set ELM_HOME
+              run: echo "ELM_HOME=${GITHUB_WORKSPACE}/.elm" >> $GITHUB_ENV
+
+            # build LiaScript
+            - name: LiaScript - download
+              run: git clone --branch development https://github.com/LiaScript/LiaScript.git
+            - name: LiaScript - prebuild
+              run: |
+                  cd LiaScript
+                  npm install
+                  npm run prebuild
+            - name: LiaScript - patches
+              run: |
+                  cd LiaScript
+                  git submodule update --init --recursive
+                  cd patches
+                  make
+                  cd ..
+                  rm -rf elm-stuff .parcel-cache
+            - name: LiaScript - build
+              run: |
+                  cd LiaScript
+                  make all2 KEY="${{ secrets.RESPONSIVEVOICE_KEY }}"
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./LiaScript/dist
+                  publish_branch: gh-pages
